@@ -2,7 +2,7 @@
 import UIKit
 import Photos
 
-class CellModel {
+struct CellModel {
     let asset: PHAsset
     var order: Int
     var image: UIImage?

@@ -27,7 +27,6 @@ class GalleryCell: UICollectionViewCell {
         label.clipsToBounds = true
         label.layer.cornerRadius = 7.5
         label.isHidden = true
-        label.text = "0"
         label.numberOfLines = 1
         label.textAlignment = .center
         label.adjustsFontSizeToFitWidth = true

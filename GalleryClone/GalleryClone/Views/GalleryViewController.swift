@@ -19,11 +19,7 @@ final class GalleryViewController: UIViewController {
     private var albumIndex = 0
     private var selectedIndex = 1
     private var dataSource = [CellModel]()
-    private var selectedSource = [CellModel]() {
-        didSet {
-            selectedCollectionView.reloadData()
-        }
-    }
+    private var selectedSource = [CellModel]()
     
     private let galleryCollectionViewFlowLayout = UICollectionViewFlowLayout()
     private lazy var galleryCollectionView = UICollectionView(frame: .zero, collectionViewLayout: galleryCollectionViewFlowLayout)
@@ -32,7 +28,7 @@ final class GalleryViewController: UIViewController {
     private lazy var selectedCollectionView = UICollectionView(frame: .zero, collectionViewLayout: selectedCollectionViewFlowLayout)
     
     private let galleryDropbox = {
-       let button = UIButton()
+        let button = UIButton()
         button.backgroundColor = .white
         return button
     }()
@@ -77,11 +73,10 @@ final class GalleryViewController: UIViewController {
     }
     
     func setSelectedCollectionView() {
-
+        
         selectedCollectionViewFlowLayout.scrollDirection = .horizontal
         selectedCollectionViewFlowLayout.minimumLineSpacing = 20
-//        selectedCollectionViewFlowLayout.minimumInteritemSpacing = 2
-        selectedCollectionViewFlowLayout.itemSize = CGSize(width: 50, height: 50)
+        selectedCollectionViewFlowLayout.itemSize = CGSize(width: 80, height: 80)
         selectedCollectionView.isSpringLoaded = true
         selectedCollectionView.showsVerticalScrollIndicator = false
         selectedCollectionView.showsHorizontalScrollIndicator = true
@@ -112,17 +107,17 @@ final class GalleryViewController: UIViewController {
         [galleryDropbox,selectedCollectionView,galleryCollectionView,submitButton].forEach{self.view.addSubview($0)}
         galleryDropbox.snp.makeConstraints { make in
             make.left.right.top.equalToSuperview()
-            make.bottom.equalTo(self.view.safeAreaLayoutGuide.snp.top).offset(20)
+            make.bottom.equalTo(self.view.safeAreaLayoutGuide.snp.top).offset(40)
         }
         selectedCollectionView.snp.makeConstraints { make in
             make.top.equalTo(galleryDropbox.snp.bottom).offset(20)
             make.left.right.equalToSuperview()
-            make.height.equalTo(50)
+            make.height.equalTo(80)
         }
         galleryCollectionView.snp.makeConstraints { make in
             make.top.equalTo(selectedCollectionView.snp.bottom).offset(20)
             make.left.right.equalToSuperview()
-            make.bottom.equalTo(self.view.safeAreaLayoutGuide).offset(-20)
+            make.bottom.equalTo(self.view.safeAreaLayoutGuide).offset(-40)
         }
         submitButton.snp.makeConstraints { make in
             make.left.right.equalToSuperview()
@@ -132,23 +127,58 @@ final class GalleryViewController: UIViewController {
     }
     
     func openCamera() {
-      // Privacy - Camera Usage Description
-      AVCaptureDevice.requestAccess(for: .video) { [weak self] isAuthorized in
-        guard isAuthorized else {
-          return
+        // Privacy - Camera Usage Description
+        AVCaptureDevice.requestAccess(for: .video) { [weak self] isAuthorized in
+            guard isAuthorized else {
+                return
+            }
+            
+            DispatchQueue.main.async {
+                let pickerController = UIImagePickerController()
+                pickerController.sourceType = .camera
+                pickerController.allowsEditing = false
+                pickerController.mediaTypes = ["public.image"]
+                self?.present(pickerController, animated: true)
+            }
+        }
+    }
+    
+    func reconfigureAfterSelection(_ indexPath: IndexPath) {
+        let cell = galleryCollectionView.cellForItem(at: indexPath) as! GalleryCell
+        let selectedOrder = dataSource[indexPath.item-1].order
+        let currentCellModel = dataSource[indexPath.item-1]
+        var reloadIndexPaths = [IndexPath]()
+        reloadIndexPaths.append(indexPath)
+        cell.selectedEffectView.isHidden.toggle()
+        cell.orderLabel.isHidden.toggle()
+        if cell.orderLabel.isHidden { // 선택 해제시
+            // 전체 사진 컬렉션뷰에서 해당 사진 order 0으로 초기화
+            dataSource[indexPath.item-1] = CellModel(asset: currentCellModel.asset, order: .zero, image: currentCellModel.image)
+            // 전체 사진 컬렉션뷰 배열에서 해당 order보다 높은 경우 1씩 감소
+            for index in 0..<dataSource.count {
+                if dataSource[index].order > selectedOrder {
+                    reloadIndexPaths.append(IndexPath(item: index+1, section: 0))
+                    dataSource[index].order -= 1
+                }
+            }
+            selectedIndex-=1
+        } else { // 선택
+            dataSource[indexPath.item-1] = CellModel(asset: currentCellModel.asset, order: selectedIndex, image: currentCellModel.image)
+            selectedIndex+=1
         }
         
-        DispatchQueue.main.async {
-          let pickerController = UIImagePickerController()
-          pickerController.sourceType = .camera
-          pickerController.allowsEditing = false
-          pickerController.mediaTypes = ["public.image"]
-          self?.present(pickerController, animated: true)
+        selectedSource = dataSource.filter{$0.order > 0}.sorted(by: {$0.order<$1.order})
+        galleryCollectionView.performBatchUpdates {
+            galleryCollectionView.reconfigureItems(at: reloadIndexPaths)
+            
+        } completion: { executionResult in
+            if executionResult {
+                self.selectedCollectionView.reloadData()
+            }
         }
-      }
     }
-
-
+    
+    
 }
 
 extension GalleryViewController : UICollectionViewDataSource {
@@ -163,8 +193,6 @@ extension GalleryViewController : UICollectionViewDataSource {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: SelectedCell.cellIdentifier, for: indexPath) as! SelectedCell
             
             let imageInfo = selectedSource[indexPath.item]
-            let currentAsset = imageInfo.asset
-            let imageSize = CGSize(width: 50 * Const.scale, height: 50 * Const.scale)
             
             cell.selectedImageView.image = imageInfo.image
             return cell
@@ -179,13 +207,15 @@ extension GalleryViewController : UICollectionViewDataSource {
                 return cell
             }
             
-            var imageInfo = dataSource[indexPath.item-1]
+            let imageInfo = dataSource[indexPath.item-1]
             let currentAsset = imageInfo.asset
             let imageSize = CGSize(width: Const.cellSize.width * Const.scale, height: Const.cellSize.height * Const.scale)
-            
-            photoService.fetchImage(asset: currentAsset, size: imageSize, contentMode: .aspectFit) { fetchedImage in
-                self.dataSource[indexPath.item-1].image = fetchedImage
-                cell.galleryImageView.image = fetchedImage
+            cell.orderLabel.text = "\(dataSource[indexPath.item-1].order)"
+            if dataSource[indexPath.item-1].image == nil {
+                photoService.fetchImage(asset: currentAsset, size: imageSize, contentMode: .aspectFit) { fetchedImage in
+                    self.dataSource[indexPath.item-1].image = fetchedImage
+                    cell.galleryImageView.image = fetchedImage
+                }
             }
             return cell
         }
@@ -198,32 +228,15 @@ extension GalleryViewController : UICollectionViewDataSource {
 extension GalleryViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if collectionView.tag == 1 {
-            
-            collectionView.performBatchUpdates {
-                selectedSource.remove(at: indexPath.item)
-                collectionView.deleteItems(at: [indexPath])
-            }
+            let targetItem = Array(self.dataSource.enumerated()).filter({$1.order==indexPath.item+1})[0].offset
+            reconfigureAfterSelection(IndexPath(item: targetItem+1, section: .zero))
         } else {
             guard indexPath.item != 0 else {
                 openCamera()
                 return
             }
-            let cell = collectionView.cellForItem(at: indexPath) as! GalleryCell
-            cell.selectedEffectView.isHidden.toggle()
-            cell.orderLabel.isHidden.toggle()
-            cell.orderLabel.text = "\(selectedIndex)"
-            let dif = cell.orderLabel.isHidden ? -1 : 1
-            
-            if !cell.orderLabel.isHidden {
-                dataSource[indexPath.item-1].order = selectedIndex
-                selectedSource.append(dataSource[indexPath.item-1])
-            } else {
-                dataSource[indexPath.item-1].order = selectedIndex - 1
-                selectedSource.remove(at: dataSource[indexPath.item-1].order-1)
-            }
-            selectedIndex += dif
+            reconfigureAfterSelection(indexPath)
         }
-        
     }
 }
 
