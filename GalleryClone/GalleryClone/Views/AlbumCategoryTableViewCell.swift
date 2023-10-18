@@ -21,7 +21,7 @@ class AlbumCategoryTableViewCell: UITableViewCell {
     
     let countLabel = {
        let label = UILabel()
-        label.numberOfLines = 1
+        label.numberOfLines = 0
         label.adjustsFontSizeToFitWidth = true
         label.textColor = .black
         return label
@@ -41,11 +41,11 @@ class AlbumCategoryTableViewCell: UITableViewCell {
         [categoryLabel,countLabel].forEach{self.addSubview($0)}
         categoryLabel.snp.makeConstraints { make in
             make.centerY.equalToSuperview()
-            make.leading.equalToSuperview().offset(self.bounds.size.height / 4)
+            make.leading.equalToSuperview().offset(self.bounds.size.height / 2)
         }
         countLabel.snp.makeConstraints { make in
             make.centerY.equalToSuperview()
-            make.leading.equalTo(self.snp.trailing).offset( self.bounds.size.height / -2)
+            make.trailing.equalToSuperview().offset( self.bounds.size.height / -4)
         }
     }
     

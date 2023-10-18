@@ -17,10 +17,8 @@ final class GalleryViewController: UIViewController {
     private let photoService: PhotoService = GalleryPhotoService()
     //    private var tableViewDataSource = [String]()
     private var albums = [Album]()
-    private var albumAssets = [PHFetchResult<PHAsset>]()
-    private var albumCategory = [String]()
-    private var categoryIndex = 0
-    private var assetIndex = 0
+    private var albumAssets = PHFetchResult<PHAsset>()
+    private var albumIndex = 0
     private var selectedIndex = 1
     private var dataSource = [CellModel]()
     private var selectedSource = [CellModel]()
@@ -68,18 +66,17 @@ final class GalleryViewController: UIViewController {
         albumService.getAlbums { [weak self] fetchedAlbums in
             guard let self else {return}
             albums = fetchedAlbums
-            albumCategory = Array(Set(albums.map{$0.name}))
-            albumAssets = albums.filter{$0.name == self.albumCategory[self.categoryIndex]}.map{$0.assets}
+            albumAssets = albums[self.albumIndex].assets
             completion()
         }
     }
     
     func loadImages() {
-        guard assetIndex < albumAssets.count else {return}
-        photoService.convertAlbumToAssets(album: albumAssets[assetIndex]) { [weak self] fetchedAssets in
+        
+        photoService.convertAlbumToAssets(album: albumAssets) { [weak self] fetchedAssets in
             guard let self else {return}
-            dataSource = fetchedAssets.map{CellModel(asset: $0, order: .zero,isVisible: false)}
-            dropboxToggleButton.setTitle("standard \(dataSource.count)", for: .normal)
+            dataSource = fetchedAssets.map{CellModel(asset: $0, albumIndex: self.albumIndex, order: .zero,isVisible: false)}
+            dropboxToggleButton.setTitle("\(self.albums[albumIndex].name) \(albums[albumIndex].assets.count)", for: .normal)
             galleryCollectionView.reloadData()
         }
     }
@@ -149,7 +146,7 @@ final class GalleryViewController: UIViewController {
         albumCategoryTableView.snp.makeConstraints { make in
             make.top.equalTo(dropboxToggleButton.snp.bottom)
             make.height.equalTo(100)
-            make.width.equalTo(self.view.bounds.size.width / 2)
+            make.width.equalTo(self.view.bounds.size.width / 1.5)
             make.centerX.equalToSuperview()
         }
     }
@@ -188,12 +185,20 @@ final class GalleryViewController: UIViewController {
         
         let selectedOrder = dataSource[indexPath.item-1].order
         let currentCellModel = dataSource[indexPath.item-1]
+        defer{
+            print("\(albumIndex)번째 앨범의 \(indexPath.item-1)번째 사진 선택 ")
+            print("-------------이하 dataSource-------------")
+            dataSource.forEach{print("order: \($0.order) albumindex: \($0.albumIndex) indexpath: \($0.indexPath?.item) visibility: \($0.isVisible) ")}
+            print("-------------이하 selectedSource-------------")
+            selectedSource.forEach{print("order: \($0.order) albumindex: \($0.albumIndex) indexpath: \($0.indexPath?.item) visibility: \($0.isVisible) ")}
+            
+        }
         var reloadIndexPaths = [IndexPath]()
         reloadIndexPaths.append(indexPath)
         guard let visibility =  currentCellModel.isVisible else {return}
         if visibility { // 선택 해제시
             // 전체 사진 컬렉션뷰에서 해당 사진 order 0으로 초기화
-            dataSource[indexPath.item-1] = CellModel(asset: currentCellModel.asset, order: .zero, image: currentCellModel.image,indexPath: nil, isVisible: false)
+            dataSource[indexPath.item-1] = CellModel(asset: currentCellModel.asset,albumIndex: currentCellModel.albumIndex, order: .zero, image: currentCellModel.image,indexPath: nil, isVisible: false)
             // 전체 사진 컬렉션뷰 배열에서 해당 order보다 높은 경우 1씩 감소
             for index in 0..<dataSource.count {
                 if dataSource[index].order > selectedOrder {
@@ -203,11 +208,11 @@ final class GalleryViewController: UIViewController {
             }
             selectedIndex-=1
         } else { // 선택
-            dataSource[indexPath.item-1] = CellModel(asset: currentCellModel.asset, order: selectedIndex, image: currentCellModel.image,indexPath: indexPath,isVisible: true)
+            dataSource[indexPath.item-1] = CellModel(asset: currentCellModel.asset,albumIndex: albumIndex, order: selectedIndex, image: currentCellModel.image,indexPath: indexPath,isVisible: true)
             selectedIndex+=1
         }
         
-        selectedSource = dataSource.filter{$0.indexPath != nil}.sorted(by: {$0.order<$1.order})
+        selectedSource = (selectedSource.filter{$0.albumIndex != self.albumIndex} + dataSource.filter{$0.indexPath != nil}).sorted(by: {$0.order<$1.order})
         galleryCollectionView.performBatchUpdates {
             galleryCollectionView.reconfigureItems(at: reloadIndexPaths)
             
@@ -219,13 +224,13 @@ final class GalleryViewController: UIViewController {
         }
     }
     
-    @objc func toggleDropbox(_ sender: UIButton) {
+    @objc func toggleDropbox() {
         if albumCategoryTableView.isHidden {
             self.view.bringSubviewToFront(self.albumCategoryTableView)
             albumCategoryTableView.snp.updateConstraints { make in
                 make.height.equalTo(Int(albumCategoryTableView.rowHeight) * albums.count)
             }
-            albumCategoryTableView.reloadData()
+            
         } else {
             self.view.sendSubviewToBack(self.albumCategoryTableView)
             albumCategoryTableView.snp.updateConstraints { make in
@@ -298,13 +303,13 @@ extension GalleryViewController: UICollectionViewDelegate {
 
 extension GalleryViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return albumCategory.count
+        return albums.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: AlbumCategoryTableViewCell.cellIdentifier, for: indexPath) as? AlbumCategoryTableViewCell else {return UITableViewCell()}
-        cell.categoryLabel.text = albumCategory[indexPath.row]
-        cell.countLabel.text = "\(albums.filter{$0.name == albumCategory[indexPath.row]}.count)"
+        cell.categoryLabel.text = albums[indexPath.row].name
+        cell.countLabel.text = "\(albums[indexPath.row].assets.count)"
         return cell
     }
     
@@ -312,7 +317,13 @@ extension GalleryViewController: UITableViewDataSource {
 }
 
 extension GalleryViewController: UITableViewDelegate {
-    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        albumIndex = indexPath.row
+        toggleDropbox()
+        loadAlbums(completion: { [weak self] in
+            self?.loadImages()
+        })
+    }
 }
 
 extension GalleryViewController: UINavigationControllerDelegate,UIImagePickerControllerDelegate {
@@ -322,7 +333,7 @@ extension GalleryViewController: UINavigationControllerDelegate,UIImagePickerCon
             return
         }
         
-        dataSource.append(CellModel(order:.zero,image: image,indexPath: IndexPath(item: dataSource.count, section: 0),isVisible: false))
+        dataSource.append(CellModel(albumIndex: albumIndex,order:.zero,image: image,indexPath: IndexPath(item: dataSource.count, section: 0),isVisible: false))
         galleryCollectionView.reloadData()
         
         
