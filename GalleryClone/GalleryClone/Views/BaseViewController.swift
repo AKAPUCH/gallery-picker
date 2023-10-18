@@ -7,10 +7,12 @@ final class BaseViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+    }
+    override func viewDidAppear(_ animated: Bool) {
         self.view.backgroundColor = .green
         checkPermission()
     }
-    
     func checkPermission() {
         authService.requestAuthorization { [weak self] result in
             guard let self else {return}

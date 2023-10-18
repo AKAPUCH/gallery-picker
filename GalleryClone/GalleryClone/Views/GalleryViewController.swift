@@ -15,13 +15,17 @@ final class GalleryViewController: UIViewController {
     
     private let albumService: AlbumService = GalleryAlbumService()
     private let photoService: PhotoService = GalleryPhotoService()
-    //    private var tableViewDataSource = [String]()
     private var albums = [Album]()
     private var albumAssets = PHFetchResult<PHAsset>()
     private var albumIndex = 0
     private var selectedIndex = 1
     private var dataSource = [CellModel]()
-    private var selectedSource = [CellModel]()
+    private var selectedSource = [CellModel]() {
+        didSet {
+            submitButton.isEnabled = selectedSource.count > 0
+            submitButton.backgroundColor = submitButton.isEnabled ? .black : .gray
+        }
+    }
     
     private let galleryCollectionViewFlowLayout = UICollectionViewFlowLayout()
     private lazy var galleryCollectionView = UICollectionView(frame: .zero, collectionViewLayout: galleryCollectionViewFlowLayout)
@@ -37,14 +41,23 @@ final class GalleryViewController: UIViewController {
         return button
     }()
     
+    private lazy var undoButton = {
+        let button = UIButton()
+        button.tintColor = .black
+        button.setImage(UIImage(systemName: "xmark"), for: .normal)
+        button.addTarget(self, action: #selector(endSelection), for: .touchUpInside)
+        return button
+    }()
+    
     private let albumCategoryTableView = UITableView()
     
-    private let submitButton = {
+    private lazy var submitButton = {
         let button = UIButton()
         button.isEnabled = false
         button.setTitle("OK", for: .disabled)
         button.setTitle("OK", for: .normal)
         button.backgroundColor = .systemGray
+        button.addTarget(self, action: #selector(endSelection), for: .touchUpInside)
         return button
     }()
     
@@ -123,6 +136,7 @@ final class GalleryViewController: UIViewController {
     
     func setUI() {
         [dropboxToggleButton,selectedCollectionView,galleryCollectionView,submitButton,albumCategoryTableView].forEach{self.view.addSubview($0)}
+        dropboxToggleButton.addSubview(undoButton)
         dropboxToggleButton.snp.makeConstraints { make in
             make.top.equalTo(self.view.safeAreaLayoutGuide)
             make.left.right.equalToSuperview()
@@ -148,6 +162,11 @@ final class GalleryViewController: UIViewController {
             make.height.equalTo(100)
             make.width.equalTo(self.view.bounds.size.width / 1.5)
             make.centerX.equalToSuperview()
+        }
+        undoButton.snp.makeConstraints { make in
+            make.height.equalToSuperview()
+            make.width.equalTo(dropboxToggleButton.snp.height)
+            make.top.trailing.equalToSuperview()
         }
     }
     
@@ -185,14 +204,6 @@ final class GalleryViewController: UIViewController {
         
         let selectedOrder = dataSource[indexPath.item-1].order
         let currentCellModel = dataSource[indexPath.item-1]
-        defer{
-            print("\(albumIndex)번째 앨범의 \(indexPath.item-1)번째 사진 선택 ")
-            print("-------------이하 dataSource-------------")
-            dataSource.forEach{print("order: \($0.order) albumindex: \($0.albumIndex) indexpath: \($0.indexPath?.item) visibility: \($0.isVisible) ")}
-            print("-------------이하 selectedSource-------------")
-            selectedSource.forEach{print("order: \($0.order) albumindex: \($0.albumIndex) indexpath: \($0.indexPath?.item) visibility: \($0.isVisible) ")}
-            
-        }
         var reloadIndexPaths = [IndexPath]()
         reloadIndexPaths.append(indexPath)
         guard let visibility =  currentCellModel.isVisible else {return}
@@ -239,6 +250,10 @@ final class GalleryViewController: UIViewController {
         }
         albumCategoryTableView.isHidden.toggle()
         
+    }
+    
+    @objc func endSelection(_ sender: UIButton) {
+        self.dismiss(animated: true)
     }
     
     
