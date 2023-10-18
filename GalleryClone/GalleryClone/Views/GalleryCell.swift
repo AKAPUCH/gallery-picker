@@ -5,7 +5,7 @@ import SnapKit
 class GalleryCell: UICollectionViewCell {
     
     static let cellIdentifier = "Gallery"
-    
+
     let galleryImageView = {
        let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
@@ -29,6 +29,7 @@ class GalleryCell: UICollectionViewCell {
         label.isHidden = true
         label.numberOfLines = 1
         label.textAlignment = .center
+        label.text = "0"
         label.adjustsFontSizeToFitWidth = true
         return label
     }()
@@ -40,6 +41,26 @@ class GalleryCell: UICollectionViewCell {
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        prepareCell(nil)
+    }
+    
+    func prepareCell(_ cellModel: CellModel?) {
+        guard let cellModel else {return}
+        galleryImageView.image = cellModel.image
+        guard let currentOrder = Int(orderLabel.text!) else{return}
+        if currentOrder == cellModel.order && currentOrder > 0 {
+            selectedEffectView.isHidden = false
+            orderLabel.text = "\(cellModel.order)"
+            orderLabel.isHidden = false
+        } else {
+            selectedEffectView.isHidden = true
+            orderLabel.isHidden = true
+        }
+
     }
     
     func configureUI() {

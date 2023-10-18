@@ -21,6 +21,7 @@
 		6EF6226A2ADD8C6900A305DF /* GalleryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF622692ADD8C6900A305DF /* GalleryCell.swift */; };
 		6EF6226D2ADD8CF700A305DF /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 6EF6226C2ADD8CF700A305DF /* SnapKit */; };
 		D006631C2ADE2197007A126E /* SelectedCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D006631B2ADE2197007A126E /* SelectedCell.swift */; };
+		D00663202ADF985E007A126E /* AlbumCategoryTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D006631F2ADF985E007A126E /* AlbumCategoryTableViewCell.swift */; };
 		D0379FDE2ADE099D00D347EE /* CellModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0379FDD2ADE099D00D347EE /* CellModel.swift */; };
 /* End PBXBuildFile section */
 
@@ -40,6 +41,7 @@
 		6EF622672ADD7ED100A305DF /* PhotoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoService.swift; sourceTree = "<group>"; };
 		6EF622692ADD8C6900A305DF /* GalleryCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryCell.swift; sourceTree = "<group>"; };
 		D006631B2ADE2197007A126E /* SelectedCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedCell.swift; sourceTree = "<group>"; };
+		D006631F2ADF985E007A126E /* AlbumCategoryTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumCategoryTableViewCell.swift; sourceTree = "<group>"; };
 		D0379FDD2ADE099D00D347EE /* CellModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -103,6 +105,7 @@
 				6EF622612ADD6C6A00A305DF /* GalleryViewController.swift */,
 				6EF622692ADD8C6900A305DF /* GalleryCell.swift */,
 				D006631B2ADE2197007A126E /* SelectedCell.swift */,
+				D006631F2ADF985E007A126E /* AlbumCategoryTableViewCell.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -196,6 +199,7 @@
 			files = (
 				D006631C2ADE2197007A126E /* SelectedCell.swift in Sources */,
 				6EF622682ADD7ED100A305DF /* PhotoService.swift in Sources */,
+				D00663202ADF985E007A126E /* AlbumCategoryTableViewCell.swift in Sources */,
 				6EF622472ADD60EE00A305DF /* AppDelegate.swift in Sources */,
 				6EF622492ADD60EE00A305DF /* SceneDelegate.swift in Sources */,
 				D0379FDE2ADE099D00D347EE /* CellModel.swift in Sources */,
@@ -356,7 +360,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = ZS7K5599Y5;
+				DEVELOPMENT_TEAM = 8FYBU4VUK4;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GalleryClone/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -385,7 +389,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = ZS7K5599Y5;
+				DEVELOPMENT_TEAM = 8FYBU4VUK4;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GalleryClone/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

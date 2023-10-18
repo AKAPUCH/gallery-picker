@@ -11,12 +11,7 @@ final class GalleryAlbumService : AlbumService {
     func getAlbums(completion: @escaping ([Album]) -> Void) {
         var albums = [Album]()
         let options = configureFetchOptions()
-        let standardAlbum = PHAsset.fetchAssets(with: options)
-        
         defer {completion(albums)}
-        
-        albums.append(Album(name: "standard", assets: standardAlbum))
-        
         let smartAlbums = PHAssetCollection.fetchAssetCollections(with: .smartAlbum, subtype: .any, options: PHFetchOptions())
         
         smartAlbums.enumerateObjects { [weak self] assetCollection, index, pointer in
@@ -30,9 +25,11 @@ final class GalleryAlbumService : AlbumService {
                 let smartFetchoptions = configureFetchOptions()
                 
                 let smartAlbum = PHAsset.fetchAssets(in: assetCollection, options: smartFetchoptions)
-                albums.append(Album(name: "smart", assets: smartAlbum))
+                albums.append(Album(name: "live", assets: smartAlbum))
             }
         }
+        
+        
     
     }
     
@@ -40,7 +37,7 @@ final class GalleryAlbumService : AlbumService {
         let options = PHFetchOptions()
         
         options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
-        options.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
+        options.predicate = NSPredicate(format: "mediaType == %d && mediaSubTypes == %d", PHAssetMediaType.image.rawValue,PHAssetMediaSubtype.photoLive.rawValue)
         
         return options
     }
