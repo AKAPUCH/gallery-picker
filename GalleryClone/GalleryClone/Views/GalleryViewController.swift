@@ -14,15 +14,15 @@ final class GalleryViewController: UIViewController {
     }
     
     private let albumService: AlbumService = GalleryAlbumService()
-    private let photoService: PhotoService = GalleryPhotoService()
-    private var albums = [Album]()
-    private var albumAssets = [PHFetchResult<PHAsset>]()
+    private var photoService: PhotoService = GalleryPhotoService()
+     var albums = [Album]()
+     var albumAssets = [PHFetchResult<PHAsset>]()
     private var albumIndex = 0
     private var selectedIndex = 1
     private var dataSourceArr = [[CellModel]]()
     private var dataSource = [CellModel]()
     private var selectedSource = [CellModel]() {
-        didSet {
+        didSet{
             submitButton.isEnabled = selectedSource.count > 0
             submitButton.backgroundColor = submitButton.isEnabled ? .black : .gray
         }
@@ -61,9 +61,14 @@ final class GalleryViewController: UIViewController {
         button.addTarget(self, action: #selector(endSelection), for: .touchUpInside)
         return button
     }()
-    
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        photoService.delegate = self
+    }
     
     override func viewDidLoad() {
+
         super.viewDidLoad()
         self.view.backgroundColor = .white
         self.view.layer.masksToBounds = true
@@ -72,12 +77,7 @@ final class GalleryViewController: UIViewController {
         setAlbumCategoryTableView()
         setUI()
         loadAlbums(completion: { [weak self] in
-            self?.loadImages(completion: { [weak self] in
-                guard let self else {return}
-                dropboxToggleButton.setTitle("\(albums[albumIndex].name) \(albums[albumIndex].assets.count)", for: .normal)
-                dataSource = dataSourceArr[albumIndex]
-                galleryCollectionView.reloadData()
-            })
+            self?.reloadAlbumsAfterAddPhoto()
         })
     }
     
@@ -90,13 +90,14 @@ final class GalleryViewController: UIViewController {
         }
     }
     
-    func loadImages(completion: @escaping () -> Void) {
-        defer{completion()}
+    func loadImages(completion: @escaping ([[CellModel]]) -> Void) {
+        var fetchedDataSourceArr = [[CellModel]]()
+        defer{completion(fetchedDataSourceArr)}
         for currentAlbumIndex in 0..<albums.count {
             photoService.convertAlbumToAssets(album: albumAssets[currentAlbumIndex]) { [weak self] fetchedAssets in
                 guard let self else {return}
                 let currentDataSource = fetchedAssets.map{CellModel(asset: $0, albumIndex: self.albumIndex, order: .zero,isVisible: false)}
-                dataSourceArr.append(currentDataSource)
+                fetchedDataSourceArr.append(currentDataSource)
             }
         }
     }
@@ -189,12 +190,47 @@ final class GalleryViewController: UIViewController {
         }
     }
     
+    func reloadAlbumsAfterAddPhoto() {
+        loadImages(completion: { [weak self] fetchedDataSourceArr in
+                guard let self else {return}
+            if let updatedArr = updateSelectedSource(fetchedDataSourceArr) {
+                dataSourceArr = updatedArr
+            } else {
+                dataSourceArr = fetchedDataSourceArr
+            }
+                dataSource = dataSourceArr[albumIndex]
+            DispatchQueue.main.async {[weak self] in
+                guard let self else {return}
+                dropboxToggleButton.setTitle("\(albums[albumIndex].name) \(albums[albumIndex].assets.count)", for: .normal)
+                galleryCollectionView.reloadData()
+                selectedCollectionView.reloadData()
+                albumCategoryTableView.reloadData()
+            }
+            })
+
+    }
+    
+    func updateSelectedSource(_ fetchedArr: [[CellModel]]) -> [[CellModel]]? {
+        var migrationArr = fetchedArr
+        for (i,cellModels) in dataSourceArr.enumerated() {
+            let checkedCellModels = cellModels.filter{$0.order>0}
+            for checkedCellModel in checkedCellModels {
+                guard let correspondIndex = migrationArr[i].firstIndex(of: checkedCellModel) else {return nil}
+                migrationArr[i][correspondIndex] = checkedCellModel
+            }
+            
+        }
+        
+        return migrationArr
+    }
+    
     func openCamera() {
         // Privacy - Camera Usage Description
         AVCaptureDevice.requestAccess(for: .video) { [weak self] isAuthorized in
             guard isAuthorized else {
                 return
             }
+            
             DispatchQueue.main.async {
                 let pickerController = UIImagePickerController()
                 pickerController.sourceType = .camera
@@ -234,7 +270,7 @@ final class GalleryViewController: UIViewController {
             selectedIndex+=1
         }
         
-        selectedSource = dataSourceArr.flatMap{$0}.compactMap{$0}.filter{$0.order > 0}.sorted(by: {$0.order<$1.order})
+//        selectedSource = dataSourceArr.flatMap{$0}.compactMap{$0}.filter{$0.order > 0}.sorted(by: {$0.order<$1.order})
         dataSource = dataSourceArr[albumIndex]
         galleryCollectionView.performBatchUpdates {
             galleryCollectionView.reconfigureItems(at: reloadIndexPaths)
@@ -261,12 +297,14 @@ final class GalleryViewController: UIViewController {
             }
         }
         albumCategoryTableView.isHidden.toggle()
-        
+        albumCategoryTableView.reloadData()
     }
     
     @objc func endSelection(_ sender: UIButton) {
         self.dismiss(animated: true)
     }
+    
+    
     
     
 }
@@ -341,8 +379,6 @@ extension GalleryViewController: UITableViewDataSource {
         cell.countLabel.text = "\(albums[indexPath.row].assets.count)"
         return cell
     }
-    
-    
 }
 
 extension GalleryViewController: UITableViewDelegate {
@@ -350,11 +386,8 @@ extension GalleryViewController: UITableViewDelegate {
         albumIndex = indexPath.row
         toggleDropbox()
         dataSource = dataSourceArr[albumIndex]
+        dropboxToggleButton.setTitle("\(albums[albumIndex].name) \(albums[albumIndex].assets.count)", for: .normal)
         galleryCollectionView.reloadData()
-
-//        loadAlbums(completion: { [weak self] in
-//            self?.loadImages(completion: <#() -> Void#>)
-//        })
     }
 }
 
@@ -364,11 +397,7 @@ extension GalleryViewController: UINavigationControllerDelegate,UIImagePickerCon
             picker.dismiss(animated: true)
             return
         }
-        
-        dataSourceArr[0].append(CellModel(albumIndex: albumIndex,order:.zero,image: image,indexPath: IndexPath(item: dataSourceArr[0].count, section: 0),isVisible: false))
-        galleryCollectionView.reloadData()
-        
-        
+        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
         picker.dismiss(animated: true, completion: nil)
     }
 }

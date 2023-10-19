@@ -2,7 +2,7 @@
 import UIKit
 import Photos
 
-struct CellModel {
+struct CellModel: Equatable {
     let asset: PHAsset?
     var albumIndex: Int
     var order: Int

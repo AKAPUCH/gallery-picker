@@ -10,15 +10,10 @@ final class GalleryAlbumService : AlbumService {
     
     func getAlbums(completion: @escaping ([Album]) -> Void) {
         var albums = [Album]()
-        let options = configureFetchOptions()
-        let standardAlbum = PHAsset.fetchAssets(with: options)
 
         defer {completion(albums.sorted(by: {
             $0.assets.count == $1.assets.count ? $0.name.count < $1.name.count : $0.assets.count > $1.assets.count
         }))}
-
-        albums.append(Album(name: "standard", assets: standardAlbum))
-
         let smartAlbums = PHAssetCollection.fetchAssetCollections(with: .smartAlbum, subtype: .any, options: PHFetchOptions())
 
         smartAlbums.enumerateObjects { [weak self] assetCollection, index, pointer in

@@ -3,14 +3,16 @@ import UIKit
 import Photos
 
 protocol PhotoService {
+    var delegate: GalleryViewController? {get set}
     func convertAlbumToAssets(album: PHFetchResult<PHAsset>, completion: @escaping ([PHAsset]) -> Void)
     func fetchImage(asset: PHAsset, size: CGSize, contentMode: PHImageContentMode, completion: @escaping (UIImage) -> Void)
 }
 
 final class GalleryPhotoService : NSObject, PhotoService {
+    var delegate: GalleryViewController?
     
     private let imageManager = PHImageManager()
-    weak var delegate: PHPhotoLibraryChangeObserver?
+    
     
     override init() {
         super.init()
@@ -52,6 +54,10 @@ final class GalleryPhotoService : NSObject, PhotoService {
 
 extension GalleryPhotoService : PHPhotoLibraryChangeObserver {
     func photoLibraryDidChange(_ changeInstance: PHChange) {
-        delegate?.photoLibraryDidChange(changeInstance)
+        delegate?.loadAlbums(completion: {
+            self.delegate?.reloadAlbumsAfterAddPhoto()
+        })
     }
+    
+    
 }
