@@ -1,9 +1,3 @@
-//
-//  AlbumCategoryTableViewCell.swift
-//  GalleryClone
-//
-//  Created by 84360 on 2023/10/18.
-//
 
 import UIKit
 import SnapKit

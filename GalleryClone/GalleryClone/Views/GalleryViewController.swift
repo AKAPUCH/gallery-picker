@@ -16,9 +16,10 @@ final class GalleryViewController: UIViewController {
     private let albumService: AlbumService = GalleryAlbumService()
     private let photoService: PhotoService = GalleryPhotoService()
     private var albums = [Album]()
-    private var albumAssets = PHFetchResult<PHAsset>()
+    private var albumAssets = [PHFetchResult<PHAsset>]()
     private var albumIndex = 0
     private var selectedIndex = 1
+    private var dataSourceArr = [[CellModel]]()
     private var dataSource = [CellModel]()
     private var selectedSource = [CellModel]() {
         didSet {
@@ -71,7 +72,12 @@ final class GalleryViewController: UIViewController {
         setAlbumCategoryTableView()
         setUI()
         loadAlbums(completion: { [weak self] in
-            self?.loadImages()
+            self?.loadImages(completion: { [weak self] in
+                guard let self else {return}
+                dropboxToggleButton.setTitle("\(albums[albumIndex].name) \(albums[albumIndex].assets.count)", for: .normal)
+                dataSource = dataSourceArr[albumIndex]
+                galleryCollectionView.reloadData()
+            })
         })
     }
     
@@ -79,18 +85,19 @@ final class GalleryViewController: UIViewController {
         albumService.getAlbums { [weak self] fetchedAlbums in
             guard let self else {return}
             albums = fetchedAlbums
-            albumAssets = albums[self.albumIndex].assets
+            albumAssets = albums.map{$0.assets}
             completion()
         }
     }
     
-    func loadImages() {
-        
-        photoService.convertAlbumToAssets(album: albumAssets) { [weak self] fetchedAssets in
-            guard let self else {return}
-            dataSource = fetchedAssets.map{CellModel(asset: $0, albumIndex: self.albumIndex, order: .zero,isVisible: false)}
-            dropboxToggleButton.setTitle("\(self.albums[albumIndex].name) \(albums[albumIndex].assets.count)", for: .normal)
-            galleryCollectionView.reloadData()
+    func loadImages(completion: @escaping () -> Void) {
+        defer{completion()}
+        for currentAlbumIndex in 0..<albums.count {
+            photoService.convertAlbumToAssets(album: albumAssets[currentAlbumIndex]) { [weak self] fetchedAssets in
+                guard let self else {return}
+                let currentDataSource = fetchedAssets.map{CellModel(asset: $0, albumIndex: self.albumIndex, order: .zero,isVisible: false)}
+                dataSourceArr.append(currentDataSource)
+            }
         }
     }
     
@@ -199,31 +206,36 @@ final class GalleryViewController: UIViewController {
         }
     }
     
-    func reconfigureAfterSelection(_ indexPath: IndexPath) {
+    func reconfigureAfterSelection(_ indexPath: IndexPath, _ targetAlbumIndex: Int) {
         
         
-        let selectedOrder = dataSource[indexPath.item-1].order
-        let currentCellModel = dataSource[indexPath.item-1]
+        let selectedOrder = dataSourceArr[targetAlbumIndex][indexPath.item-1].order
+        let currentCellModel = dataSourceArr[targetAlbumIndex][indexPath.item-1]
         var reloadIndexPaths = [IndexPath]()
         reloadIndexPaths.append(indexPath)
         guard let visibility =  currentCellModel.isVisible else {return}
         if visibility { // 선택 해제시
             // 전체 사진 컬렉션뷰에서 해당 사진 order 0으로 초기화
-            dataSource[indexPath.item-1] = CellModel(asset: currentCellModel.asset,albumIndex: currentCellModel.albumIndex, order: .zero, image: currentCellModel.image,indexPath: nil, isVisible: false)
+            dataSourceArr[targetAlbumIndex][indexPath.item-1] = CellModel(asset: currentCellModel.asset,albumIndex: currentCellModel.albumIndex, order: .zero, image: currentCellModel.image,indexPath: nil, isVisible: false)
             // 전체 사진 컬렉션뷰 배열에서 해당 order보다 높은 경우 1씩 감소
-            for index in 0..<dataSource.count {
-                if dataSource[index].order > selectedOrder {
-                    reloadIndexPaths.append(IndexPath(item: index+1, section: 0))
-                    dataSource[index].order -= 1
+            for currentAlbumIndex in 0..<dataSourceArr.count {
+                for currentdataSourceIndex in 0..<dataSourceArr[currentAlbumIndex].count{
+                    if dataSourceArr[currentAlbumIndex][currentdataSourceIndex].order > selectedOrder {
+                        if currentAlbumIndex == albumIndex {
+                            reloadIndexPaths.append(IndexPath(item: currentdataSourceIndex+1, section: 0))
+                        }
+                        dataSourceArr[currentAlbumIndex][currentdataSourceIndex].order -= 1
+                    }
                 }
             }
             selectedIndex-=1
         } else { // 선택
-            dataSource[indexPath.item-1] = CellModel(asset: currentCellModel.asset,albumIndex: albumIndex, order: selectedIndex, image: currentCellModel.image,indexPath: indexPath,isVisible: true)
+            dataSourceArr[targetAlbumIndex][indexPath.item-1] = CellModel(asset: currentCellModel.asset,albumIndex: targetAlbumIndex, order: selectedIndex, image: currentCellModel.image,indexPath: indexPath,isVisible: true)
             selectedIndex+=1
         }
         
-        selectedSource = (selectedSource.filter{$0.albumIndex != self.albumIndex} + dataSource.filter{$0.indexPath != nil}).sorted(by: {$0.order<$1.order})
+        selectedSource = dataSourceArr.flatMap{$0}.compactMap{$0}.filter{$0.order > 0}.sorted(by: {$0.order<$1.order})
+        dataSource = dataSourceArr[albumIndex]
         galleryCollectionView.performBatchUpdates {
             galleryCollectionView.reconfigureItems(at: reloadIndexPaths)
             
@@ -280,21 +292,22 @@ extension GalleryViewController : UICollectionViewDataSource {
                 let cameraAccessImage = UIImage(systemName: "camera.fill")
                 cell.galleryImageView.tintColor = .white
                 cell.galleryImageView.backgroundColor = .systemGray
-                cell.galleryImageView.contentMode = .scaleAspectFit
+                cell.galleryImageView.contentMode = .center
                 cell.galleryImageView.image = cameraAccessImage
                 return cell
             }
             
-            let imageInfo = dataSource[indexPath.item-1]
+            let imageInfo = dataSourceArr[albumIndex][indexPath.item-1]
             let imageSize = CGSize(width: Const.cellSize.width * Const.scale, height: Const.cellSize.height * Const.scale)
-            cell.orderLabel.text = "\(dataSource[indexPath.item-1].order)"
+            cell.orderLabel.text = "\(dataSourceArr[albumIndex][indexPath.item-1].order)"
             if let currentAsset = imageInfo.asset{
-                photoService.fetchImage(asset: currentAsset, size: imageSize, contentMode: .aspectFit) { fetchedImage in
-                    self.dataSource[indexPath.item-1].image = fetchedImage
-                    cell.prepareCell(self.dataSource[indexPath.item-1])
+                photoService.fetchImage(asset: currentAsset, size: imageSize, contentMode: .aspectFit) { [weak self] fetchedImage in
+                    guard let self else {return}
+                    dataSourceArr[albumIndex][indexPath.item-1].image = fetchedImage
+                    cell.prepareCell(dataSourceArr[albumIndex][indexPath.item-1])
                 }
             }else {
-                cell.prepareCell(dataSource[indexPath.item-1])
+                cell.prepareCell(dataSourceArr[albumIndex][indexPath.item-1])
             }
             return cell
         }
@@ -304,14 +317,15 @@ extension GalleryViewController : UICollectionViewDataSource {
 extension GalleryViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if collectionView.tag == 1 {
-            guard let targetIndexPath = selectedSource[indexPath.item].indexPath else {return}
-            reconfigureAfterSelection(targetIndexPath)
+            let targetItem = selectedSource[indexPath.item]
+            guard let targetIndexPath = targetItem.indexPath else {return}
+            reconfigureAfterSelection(targetIndexPath,targetItem.albumIndex)
         } else {
             guard indexPath.item != 0 else {
                 openCamera()
                 return
             }
-            reconfigureAfterSelection(indexPath)
+            reconfigureAfterSelection(indexPath,albumIndex)
         }
     }
 }
@@ -335,9 +349,12 @@ extension GalleryViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         albumIndex = indexPath.row
         toggleDropbox()
-        loadAlbums(completion: { [weak self] in
-            self?.loadImages()
-        })
+        dataSource = dataSourceArr[albumIndex]
+        galleryCollectionView.reloadData()
+
+//        loadAlbums(completion: { [weak self] in
+//            self?.loadImages(completion: <#() -> Void#>)
+//        })
     }
 }
 
@@ -348,7 +365,7 @@ extension GalleryViewController: UINavigationControllerDelegate,UIImagePickerCon
             return
         }
         
-        dataSource.append(CellModel(albumIndex: albumIndex,order:.zero,image: image,indexPath: IndexPath(item: dataSource.count, section: 0),isVisible: false))
+        dataSourceArr[0].append(CellModel(albumIndex: albumIndex,order:.zero,image: image,indexPath: IndexPath(item: dataSourceArr[0].count, section: 0),isVisible: false))
         galleryCollectionView.reloadData()
         
         

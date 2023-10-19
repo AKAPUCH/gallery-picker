@@ -15,7 +15,7 @@ class GalleryCell: UICollectionViewCell {
     let selectedEffectView = {
         let view = UIView()
         view.backgroundColor = .systemPink
-        view.alpha = 0.1
+        view.alpha = 0.3
         view.isHidden = true
         return view
     }()
@@ -49,6 +49,9 @@ class GalleryCell: UICollectionViewCell {
     }
     
     func prepareCell(_ cellModel: CellModel?) {
+        galleryImageView.contentMode = .scaleAspectFill
+        selectedEffectView.isHidden = true
+        orderLabel.isHidden = true
         guard let cellModel else {return}
         galleryImageView.image = cellModel.image
         guard let currentOrder = Int(orderLabel.text!) else{return}
@@ -56,10 +59,8 @@ class GalleryCell: UICollectionViewCell {
             selectedEffectView.isHidden = false
             orderLabel.text = "\(cellModel.order)"
             orderLabel.isHidden = false
-        } else {
-            selectedEffectView.isHidden = true
-            orderLabel.isHidden = true
         }
+
 
     }
     
