@@ -6,7 +6,9 @@ import SnapKit
 final class GalleryCell: UICollectionViewCell {
 
     static let cellIdentifier = "Gallery"
-
+    
+    var galleryCellModel: CellModel?
+    
     let galleryImageView = {
        let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
@@ -47,7 +49,7 @@ final class GalleryCell: UICollectionViewCell {
     // MARK: - 셀 재사용 전 이전 데이터 모델의 값을 초기화
     override func prepareForReuse() {
         super.prepareForReuse()
-        prepareCell(nil)
+        prepareCell(galleryCellModel)
     }
 
     // MARK: - 셀 UI 업데이트

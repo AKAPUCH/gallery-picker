@@ -28,7 +28,9 @@ final class GalleryPhotoService: NSObject, PhotoService {
 
     func convertAlbumToAssets(album: PHFetchResult<PHAsset>, completion: @escaping ([PHAsset]) -> Void) {
         var assets = [PHAsset]()
-        defer {completion(assets)}
+        defer {
+            completion(assets)
+        }
         
         guard album.count > 0 else { return }
         album.enumerateObjects { asset, index, pointer in
@@ -58,6 +60,9 @@ final class GalleryPhotoService: NSObject, PhotoService {
 extension GalleryPhotoService: PHPhotoLibraryChangeObserver {
     // MARK: - 시스템 앨범 변경 감지시 GalleryViewController 데이터 및 UI 업데이트
     func photoLibraryDidChange(_ changeInstance: PHChange) {
+//        let previousFetchedResults = delegate?.getprevResult().map { $0.assets }
+        let changeDetail = changeInstance.changeDetails(for: PHFetchResult())
+        guard changeDetail?.fetchResultBeforeChanges == changeDetail?.fetchResultAfterChanges else { return }
             delegate?.applyDatas()
     }
 }

@@ -23,6 +23,7 @@
 		D006631C2ADE2197007A126E /* SelectedCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D006631B2ADE2197007A126E /* SelectedCell.swift */; };
 		D00663202ADF985E007A126E /* AlbumCategoryTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D006631F2ADF985E007A126E /* AlbumCategoryTableViewCell.swift */; };
 		D0379FDE2ADE099D00D347EE /* CellModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0379FDD2ADE099D00D347EE /* CellModel.swift */; };
+		D09CAAA02AE7B1DC00559B4F /* Then in Frameworks */ = {isa = PBXBuildFile; productRef = D09CAA9F2AE7B1DC00559B4F /* Then */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -51,6 +52,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6EF6226D2ADD8CF700A305DF /* SnapKit in Frameworks */,
+				D09CAAA02AE7B1DC00559B4F /* Then in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -138,6 +140,7 @@
 			name = GalleryClone;
 			packageProductDependencies = (
 				6EF6226C2ADD8CF700A305DF /* SnapKit */,
+				D09CAA9F2AE7B1DC00559B4F /* Then */,
 			);
 			productName = GalleryClone;
 			productReference = 6EF622432ADD60EE00A305DF /* GalleryClone.app */;
@@ -169,6 +172,7 @@
 			mainGroup = 6EF6223A2ADD60EE00A305DF;
 			packageReferences = (
 				6EF6226B2ADD8CF700A305DF /* XCRemoteSwiftPackageReference "SnapKit" */,
+				D09CAA9E2AE7B1DC00559B4F /* XCRemoteSwiftPackageReference "Then" */,
 			);
 			productRefGroup = 6EF622442ADD60EE00A305DF /* Products */;
 			projectDirPath = "";
@@ -443,6 +447,14 @@
 				minimumVersion = 5.6.0;
 			};
 		};
+		D09CAA9E2AE7B1DC00559B4F /* XCRemoteSwiftPackageReference "Then" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/devxoul/Then.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -450,6 +462,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6EF6226B2ADD8CF700A305DF /* XCRemoteSwiftPackageReference "SnapKit" */;
 			productName = SnapKit;
+		};
+		D09CAA9F2AE7B1DC00559B4F /* Then */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D09CAA9E2AE7B1DC00559B4F /* XCRemoteSwiftPackageReference "Then" */;
+			productName = Then;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

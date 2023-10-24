@@ -4,6 +4,7 @@ import UIKit
 
 protocol AuthService {
     var authorizationStatus: PHAuthorizationStatus { get }
+    func goToSetting()
     func requestAuthorization(completion: @escaping (Result<Void, NSError>) -> Void)
 }
 
@@ -13,8 +14,23 @@ final class GalleryAuthService: AuthService {
         PHPhotoLibrary.authorizationStatus(for: .readWrite)
     }
 
+    func goToSetting() {
+        guard
+            let url = URL(string: UIApplication.openSettingsURLString),
+            UIApplication.shared.canOpenURL(url)
+        else { return }
+            
+        UIApplication.shared.open(url, completionHandler: nil)
+    }
+
+
     func requestAuthorization(completion: @escaping (Result<Void, NSError>) -> Void) {
         guard authorizationStatus != .authorized else {
+            completion(.success(()))
+            return
+        }
+        
+        guard authorizationStatus != .limited else {
             completion(.success(()))
             return
         }
