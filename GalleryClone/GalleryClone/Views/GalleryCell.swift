@@ -1,9 +1,10 @@
 
 import UIKit
+
 import SnapKit
 
-class GalleryCell: UICollectionViewCell {
-    
+final class GalleryCell: UICollectionViewCell {
+
     static let cellIdentifier = "Gallery"
 
     let galleryImageView = {
@@ -11,7 +12,7 @@ class GalleryCell: UICollectionViewCell {
         imageView.contentMode = .scaleAspectFill
         return imageView
     }()
-    
+
     let selectedEffectView = {
         let view = UIView()
         view.backgroundColor = .systemPink
@@ -19,7 +20,7 @@ class GalleryCell: UICollectionViewCell {
         view.isHidden = true
         return view
     }()
-    
+
     let orderLabel = {
        let label = UILabel()
         label.backgroundColor = .systemPink
@@ -33,40 +34,41 @@ class GalleryCell: UICollectionViewCell {
         label.adjustsFontSizeToFitWidth = true
         return label
     }()
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
-        configureUI()
+        setLayout()
     }
-    
+
     required init?(coder: NSCoder) {
         super.init(coder: coder)
     }
-    
+
+    // MARK: - 셀 재사용 전 이전 데이터 모델의 값을 초기화
     override func prepareForReuse() {
         super.prepareForReuse()
         prepareCell(nil)
     }
-    
+
+    // MARK: - 셀 UI 업데이트
     func prepareCell(_ cellModel: CellModel?) {
         galleryImageView.contentMode = .scaleAspectFill
         selectedEffectView.isHidden = true
         orderLabel.isHidden = true
-        guard let cellModel else {return}
+        guard let cellModel else { return }
         galleryImageView.image = cellModel.image
-        guard let currentOrder = Int(orderLabel.text!) else{return}
+        guard let currentOrder = Int(orderLabel.text!) else{ return }
         if currentOrder == cellModel.order && currentOrder > 0 {
             selectedEffectView.isHidden = false
             orderLabel.text = "\(cellModel.order)"
             orderLabel.isHidden = false
         }
-
-
     }
-    
-    func configureUI() {
+
+    // MARK: - 오토 레이아웃 설정
+    func setLayout() {
         layer.masksToBounds = true
-        [galleryImageView,selectedEffectView,orderLabel].forEach{self.addSubview($0)}
+        [galleryImageView,selectedEffectView,orderLabel].forEach{ addSubview($0) }
         galleryImageView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }

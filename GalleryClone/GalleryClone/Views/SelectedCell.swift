@@ -1,16 +1,16 @@
 
 import UIKit
 
-class SelectedCell: UICollectionViewCell {
-    
+final class SelectedCell: UICollectionViewCell {
+
     static let cellIdentifier = "Selected"
-    
+
     let selectedImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         return imageView
     }()
-    
+
     let xmarkView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
@@ -19,19 +19,19 @@ class SelectedCell: UICollectionViewCell {
         imageView.image = UIImage(systemName: "xmark.circle.fill")
         return imageView
     }()
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
-        configureUI()
+        setLayout()
     }
-    
+
     required init?(coder: NSCoder) {
         super.init(coder: coder)
     }
-    
-    func configureUI() {
+
+    func setLayout() {
         layer.masksToBounds = true
-        [selectedImageView,xmarkView].forEach{self.addSubview($0)}
+        [selectedImageView,xmarkView].forEach{ addSubview($0) }
         selectedImageView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
