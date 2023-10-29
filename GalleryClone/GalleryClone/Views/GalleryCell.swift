@@ -2,40 +2,35 @@
 import UIKit
 
 import SnapKit
+import Then
 
 final class GalleryCell: UICollectionViewCell {
 
     static let cellIdentifier = "Gallery"
-    
+
     var galleryCellModel: CellModel?
-    
-    let galleryImageView = {
-       let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFill
-        return imageView
-    }()
 
-    let selectedEffectView = {
-        let view = UIView()
-        view.backgroundColor = .systemPink
-        view.alpha = 0.3
-        view.isHidden = true
-        return view
-    }()
+    let galleryImageView = UIImageView().then {
+        $0.contentMode = .scaleAspectFill
+    }
 
-    let orderLabel = {
-       let label = UILabel()
-        label.backgroundColor = .systemPink
-        label.textColor = .white
-        label.clipsToBounds = true
-        label.layer.cornerRadius = 7.5
-        label.isHidden = true
-        label.numberOfLines = 1
-        label.textAlignment = .center
-        label.text = "0"
-        label.adjustsFontSizeToFitWidth = true
-        return label
-    }()
+    let selectedEffectView = UIView().then {
+        $0.backgroundColor = .systemPink
+        $0.alpha = 0.3
+        $0.isHidden = true
+    }
+
+    let orderLabel = UILabel().then {
+        $0.backgroundColor = .systemPink
+        $0.textColor = .white
+        $0.clipsToBounds = true
+        $0.layer.cornerRadius = 7.5
+        $0.isHidden = true
+        $0.numberOfLines = 1
+        $0.textAlignment = .center
+        $0.text = "0"
+        $0.adjustsFontSizeToFitWidth = true
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -46,28 +41,27 @@ final class GalleryCell: UICollectionViewCell {
         super.init(coder: coder)
     }
 
-    // MARK: - 셀 재사용 전 이전 데이터 모델의 값을 초기화
+    // 셀 재사용 전 이전 데이터 모델의 값을 초기화
     override func prepareForReuse() {
         super.prepareForReuse()
         prepareCell(galleryCellModel)
     }
 
-    // MARK: - 셀 UI 업데이트
+    // 셀 UI 업데이트
     func prepareCell(_ cellModel: CellModel?) {
-        galleryImageView.contentMode = .scaleAspectFill
-        selectedEffectView.isHidden = true
-        orderLabel.isHidden = true
         guard let cellModel else { return }
-        galleryImageView.image = cellModel.image
-        guard let currentOrder = Int(orderLabel.text!) else{ return }
-        if currentOrder == cellModel.order && currentOrder > 0 {
-            selectedEffectView.isHidden = false
-            orderLabel.text = "\(cellModel.order)"
-            orderLabel.isHidden = false
+        if cellModel.image == UIImage(systemName: "camera.fill") {
+            galleryImageView.contentMode = .center
+            galleryImageView.tintColor = .systemGray
+        } else {
+            galleryImageView.contentMode = .scaleAspectFill
         }
+        selectedEffectView.isHidden = !cellModel.isSelected
+        orderLabel.isHidden = !cellModel.isSelected
+        galleryImageView.image = cellModel.image
+        orderLabel.text = "\(cellModel.order)"
     }
 
-    // MARK: - 오토 레이아웃 설정
     func setLayout() {
         layer.masksToBounds = true
         [galleryImageView,selectedEffectView,orderLabel].forEach{ addSubview($0) }

@@ -1,8 +1,9 @@
 
 import Photos
 
-// MARK: - 시스템 사진 라이브러리의 fetch 결과를 저장하는 데이터 모델
+// 시스템 사진 라이브러리의 fetch 결과를 저장하는 데이터 모델
 final class Album {
+
     let name: String
     let assets: PHFetchResult<PHAsset>
 

@@ -7,21 +7,19 @@ final class AlbumCategoryTableViewCell: UITableViewCell {
 
     static let cellIdentifier = "albumCategory"
 
-    let categoryLabel = {
-       let label = UILabel()
-        label.numberOfLines = 1
-        label.adjustsFontSizeToFitWidth = true
-        label.textColor = .black
-        return label
-    }()
+    var cellAlbum: Album?
 
-    let countLabel = {
-       let label = UILabel()
-        label.numberOfLines = 0
-        label.adjustsFontSizeToFitWidth = true
-        label.textColor = .black
-        return label
-    }()
+    let categoryLabel = UILabel().then {
+        $0.numberOfLines = 1
+        $0.adjustsFontSizeToFitWidth = true
+        $0.textColor = .black
+    }
+
+    let countLabel = UILabel().then {
+        $0.numberOfLines = 0
+        $0.adjustsFontSizeToFitWidth = true
+        $0.textColor = .black
+    }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -30,6 +28,19 @@ final class AlbumCategoryTableViewCell: UITableViewCell {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    // 셀 재사용 전 이전 데이터 모델의 값을 초기화
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        prepareCell(cellAlbum)
+    }
+
+    // 셀 UI 업데이트
+    func prepareCell(_ cellAlbum: Album?) {
+        guard let cellAlbum else { return }
+        categoryLabel.text = cellAlbum.name
+        countLabel.text = "\(cellAlbum.assets.count)"
     }
 
     func setLayout() {
